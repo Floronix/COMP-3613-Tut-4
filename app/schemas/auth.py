@@ -1,4 +1,5 @@
 from sqlmodel import SQLModel
+from pydantic import EmailStr
 
 class SigninRequest(SQLModel):
     username: str
@@ -6,5 +7,5 @@ class SigninRequest(SQLModel):
 
 class SignupRequest(SQLModel):
     username: str
-    email: str
+    email: EmailStr
     password: str

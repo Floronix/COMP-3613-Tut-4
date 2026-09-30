@@ -8,7 +8,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import RedirectResponse
 
 from app.config import get_settings
-from app.routers import api_router, router, static_files, templates
+from app.routers import api_router, game_rental, router, static_files, templates
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +31,7 @@ app = FastAPI(
 
 app.include_router(router)
 app.include_router(api_router)
+app.include_router(game_rental.router)
 app.mount("/static", static_files, name="static")
 
 
@@ -61,6 +62,12 @@ async def health():
 
 @app.exception_handler(status.HTTP_401_UNAUTHORIZED)
 async def unauthorized_redirect_handler(request: Request, exc: Exception):
+    if request.url.path.startswith("/api/") or request.url.path in {
+        "/signup", "/auth", "/games", "/listings", "/payment", "/rentals"
+    } or request.url.path.startswith("/listings/") or request.url.path.startswith("/rentals/"):
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(status_code=401, content={"detail": "Could not validate credentials"})
     return templates.TemplateResponse(
         request=request,
         name="401.html",

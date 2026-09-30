@@ -13,15 +13,16 @@ async def get_current_user(request:Request, db:SessionDep)->User:
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    token = request.cookies.get("access_token")
+    authorization = request.headers.get("Authorization", "")
+    scheme, _, bearer_token = authorization.partition(" ")
+    token = bearer_token if scheme.lower() == "bearer" else request.cookies.get("access_token")
 
     if token is None:
         raise credentials_exception
     try:
         payload = jwt.decode(token, get_settings().secret_key, algorithms=[get_settings().jwt_algorithm])
-        user_id = payload.get("sub",None)
-    except InvalidTokenError as e:
-        print("Invalid token error: ", e)
+        user_id = int(payload.get("sub"))
+    except (InvalidTokenError, TypeError, ValueError):
         raise credentials_exception
 
     repo = UserRepository(db)
@@ -53,3 +54,19 @@ async def is_admin_dep(user: AuthDep):
     return user
 
 AdminDep = Annotated[User, Depends(is_admin_dep)]
+
+
+async def require_customer(user: AuthDep) -> User:
+    if user.role != "regular_user":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Customer access required")
+    return user
+
+
+async def require_staff(user: AuthDep) -> User:
+    if user.role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Staff access required")
+    return user
+
+
+CustomerDep = Annotated[User, Depends(require_customer)]
+StaffDep = Annotated[User, Depends(require_staff)]
