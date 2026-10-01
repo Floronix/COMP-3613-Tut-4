@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{baseUrl}}/listings"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{customerToken}}
+body:
+  type: json
+  content: |-
+    {
+      "game_id": {{gameId}},
+      "condition": "Good",
+      "price": 0
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test('Non-positive listing price is rejected', function () { pm.response.to.have.status(422); });
+    language: text/javascript
+order: 9000

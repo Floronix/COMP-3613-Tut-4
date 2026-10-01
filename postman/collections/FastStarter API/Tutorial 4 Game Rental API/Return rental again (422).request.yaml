@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/rentals/{{rentalId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{staffToken}}
+body:
+  type: json
+  content: |-
+    {
+      "payment_id": {{paymentId}}
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test('Returned rental cannot be returned again', function () { pm.response.to.have.status(422); });
+    language: text/javascript
+order: 17000

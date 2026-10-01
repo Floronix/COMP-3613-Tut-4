@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/listings?platform=INVALID"
+method: GET
+queryParams:
+  platform: INVALID
+scripts:
+  - type: afterResponse
+    code: pm.test('Unsupported platform is rejected', function () { pm.response.to.have.status(422); });
+    language: text/javascript
+order: 11000

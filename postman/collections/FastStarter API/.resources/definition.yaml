@@ -1,0 +1,16 @@
+$kind: collection
+description: Requests for the FastStarter health check and JSON API endpoints.
+variables:
+  baseUrl: http://127.0.0.1:5000
+  customerUsername: ""
+  customerEmail: ""
+  customerPassword: tutorial4-secret
+  customerId: ""
+  customerToken: ""
+  staffUsername: admin
+  staffPassword: adminpass
+  staffToken: ""
+  gameId: ""
+  listingId: ""
+  paymentId: ""
+  rentalId: ""

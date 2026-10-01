@@ -1,0 +1,21 @@
+$kind: http-request
+url: "{{baseUrl}}/payment"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{staffToken}}
+body:
+  type: json
+  content: |-
+    {
+      "amount": 8
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Staff can create payment', function () { pm.response.to.have.status(201); });
+      const body = pm.response.json();
+      pm.test('Payment ID is returned', function () { pm.expect(body.paymentId).to.be.a('number'); });
+      pm.collectionVariables.set('paymentId', body.paymentId);
+    language: text/javascript
+order: 12000

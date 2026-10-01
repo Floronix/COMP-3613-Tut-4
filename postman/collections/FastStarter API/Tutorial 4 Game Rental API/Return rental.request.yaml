@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{baseUrl}}/rentals/{{rentalId}}"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{staffToken}}
+body:
+  type: json
+  content: |-
+    {
+      "payment_id": {{paymentId}}
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Rental return succeeds', function () { pm.response.to.have.status(201); });
+      pm.test('Return date is set', function () { pm.expect(pm.response.json().return_date).to.be.a('string').and.not.empty; });
+    language: text/javascript
+order: 16000

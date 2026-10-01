@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{baseUrl}}/listings/999999999/sell"
+method: POST
+headers:
+  Authorization: Bearer {{customerToken}}
+scripts:
+  - type: afterResponse
+    code: pm.test('Unknown listing returns 404', function () { pm.response.to.have.status(404); });
+    language: text/javascript
+order: 21000

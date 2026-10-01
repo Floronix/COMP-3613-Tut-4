@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{baseUrl}}/rentals"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{staffToken}}
+body:
+  type: json
+  content: |-
+    {
+      "listing_id": {{listingId}},
+      "customer_id": {{customerId}}
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test('Already rented listing cannot be rented again', function () { pm.response.to.have.status(422); });
+    language: text/javascript
+order: 15000

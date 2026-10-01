@@ -1,0 +1,22 @@
+$kind: http-request
+description: Defaults to the seeded staff account admin/adminpass. Override collection variables if needed.
+url: "{{baseUrl}}/auth"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "username": "{{staffUsername}}",
+      "password": "{{staffPassword}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Staff authentication succeeds', function () { pm.response.to.have.status(200); });
+      const body = pm.response.json();
+      pm.test('Staff bearer token is returned', function () { pm.expect(body.token_type).to.eql('bearer'); pm.expect(body.access_token).to.be.a('string').and.not.empty; });
+      pm.collectionVariables.set('staffToken', body.access_token);
+    language: text/javascript
+order: 5000

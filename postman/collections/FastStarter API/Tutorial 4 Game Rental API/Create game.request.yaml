@@ -1,0 +1,25 @@
+$kind: http-request
+url: "{{baseUrl}}/games"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{staffToken}}
+body:
+  type: json
+  content: |-
+    {
+      "title": "Tutorial 4 Test Game",
+      "rating": "E",
+      "platform": "PC",
+      "boxart": "",
+      "genre": "Puzzle"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Game is created', function () { pm.response.to.have.status(201); });
+      const body = pm.response.json();
+      pm.test('Game response contains expected values', function () { pm.expect(body.id).to.be.a('number'); pm.expect(body.title).to.eql('Tutorial 4 Test Game'); pm.expect(body.platform).to.eql('PC'); });
+      pm.collectionVariables.set('gameId', body.id);
+    language: text/javascript
+order: 6000

@@ -10,6 +10,66 @@
       "key": "baseUrl",
       "value": "http://127.0.0.1:5000",
       "type": "string"
+    },
+    {
+      "key": "customerUsername",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "customerEmail",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "customerPassword",
+      "value": "tutorial4-secret",
+      "type": "string"
+    },
+    {
+      "key": "customerId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "customerToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "staffUsername",
+      "value": "admin",
+      "type": "string"
+    },
+    {
+      "key": "staffPassword",
+      "value": "adminpass",
+      "type": "string"
+    },
+    {
+      "key": "staffToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "gameId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "listingId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "paymentId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "rentalId",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -81,6 +141,299 @@
               "    });",
               "});"
             ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tutorial 4 Game Rental API",
+      "description": "Run requests in order. Run `python manage.py seed` to make the seeded staff account (admin/adminpass) available; this does not drop existing data. Signup creates a fresh customer on every run.",
+      "item": [
+        {
+          "name": "Signup customer",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const runId = Date.now();",
+                  "pm.collectionVariables.set('customerUsername', 'tutorial4-' + runId);",
+                  "pm.collectionVariables.set('customerEmail', 'tutorial4-' + runId + '@example.com');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Signup succeeds with status 201', function () { pm.response.to.have.status(201); });",
+                  "const body = pm.response.json();",
+                  "pm.test('Response contains customer details but no password', function () { pm.expect(body.id).to.be.a('number'); pm.expect(body.username).to.eql(pm.collectionVariables.get('customerUsername')); pm.expect(body.email).to.eql(pm.collectionVariables.get('customerEmail')); pm.expect(body).not.to.have.property('password'); });",
+                  "pm.collectionVariables.set('customerId', body.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"{{customerUsername}}\",\n  \"email\": \"{{customerEmail}}\",\n  \"password\": \"{{customerPassword}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/signup", "host": ["{{baseUrl}}"], "path": ["signup"] }
+          }
+        },
+        {
+          "name": "Signup duplicate customer (400)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Duplicate account is rejected', function () { pm.response.to.have.status(400); });",
+            "pm.test('Error identifies duplicate account', function () { pm.expect(pm.response.json().detail).to.include('already exists'); });"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"{{customerUsername}}\",\n  \"email\": \"{{customerEmail}}\",\n  \"password\": \"{{customerPassword}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/signup", "host": ["{{baseUrl}}"], "path": ["signup"] }
+          }
+        },
+        {
+          "name": "Authenticate customer",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Customer authentication succeeds', function () { pm.response.to.have.status(200); });",
+            "const body = pm.response.json();",
+            "pm.test('Bearer token is returned', function () { pm.expect(body.token_type).to.eql('bearer'); pm.expect(body.access_token).to.be.a('string').and.not.empty; });",
+            "pm.collectionVariables.set('customerToken', body.access_token);"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"{{customerUsername}}\",\n  \"password\": \"{{customerPassword}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/auth", "host": ["{{baseUrl}}"], "path": ["auth"] }
+          }
+        },
+        {
+          "name": "Authenticate with invalid password (400)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Invalid credentials are rejected', function () { pm.response.to.have.status(400); });",
+            "pm.test('Error reports invalid credentials', function () { pm.expect(pm.response.json().detail).to.eql('Invalid username or password'); });"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"{{customerUsername}}\",\n  \"password\": \"incorrect-password\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/auth", "host": ["{{baseUrl}}"], "path": ["auth"] }
+          }
+        },
+        {
+          "name": "Authenticate seeded staff",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Staff authentication succeeds', function () { pm.response.to.have.status(200); });",
+            "const body = pm.response.json();",
+            "pm.test('Staff bearer token is returned', function () { pm.expect(body.token_type).to.eql('bearer'); pm.expect(body.access_token).to.be.a('string').and.not.empty; });",
+            "pm.collectionVariables.set('staffToken', body.access_token);"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"{{staffUsername}}\",\n  \"password\": \"{{staffPassword}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/auth", "host": ["{{baseUrl}}"], "path": ["auth"] },
+            "description": "Defaults to the seeded staff account admin/adminpass. Override collection variables if needed."
+          }
+        },
+        {
+          "name": "Create game",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Game is created', function () { pm.response.to.have.status(201); });",
+            "const body = pm.response.json();",
+            "pm.test('Game response contains expected values', function () { pm.expect(body.id).to.be.a('number'); pm.expect(body.title).to.eql('Tutorial 4 Test Game'); pm.expect(body.platform).to.eql('PC'); });",
+            "pm.collectionVariables.set('gameId', body.id);"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{staffToken}}" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Tutorial 4 Test Game\",\n  \"rating\": \"E\",\n  \"platform\": \"PC\",\n  \"boxart\": \"\",\n  \"genre\": \"Puzzle\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/games", "host": ["{{baseUrl}}"], "path": ["games"] }
+          }
+        },
+        {
+          "name": "Create game as customer (403)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Customer cannot create games', function () { pm.response.to.have.status(403); });"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{customerToken}}" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Forbidden Game\",\n  \"rating\": \"E\",\n  \"platform\": \"PC\",\n  \"genre\": \"Puzzle\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/games", "host": ["{{baseUrl}}"], "path": ["games"] }
+          }
+        },
+        {
+          "name": "Create listing",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Listing is created', function () { pm.response.to.have.status(201); });",
+            "const body = pm.response.json();",
+            "pm.test('Listing is owned by the customer and includes game', function () { pm.expect(body.id).to.be.a('number'); pm.expect(body.game_id).to.eql(Number(pm.collectionVariables.get('gameId'))); pm.expect(body.owner_id).to.eql(Number(pm.collectionVariables.get('customerId'))); pm.expect(body.game.title).to.eql('Tutorial 4 Test Game'); });",
+            "pm.collectionVariables.set('listingId', body.id);"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{customerToken}}" }],
+            "body": { "mode": "raw", "raw": "{\n  \"game_id\": {{gameId}},\n  \"condition\": \"Good\",\n  \"price\": 8\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/listings", "host": ["{{baseUrl}}"], "path": ["listings"] }
+          }
+        },
+        {
+          "name": "Create listing with invalid price (422)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Non-positive listing price is rejected', function () { pm.response.to.have.status(422); });"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{customerToken}}" }],
+            "body": { "mode": "raw", "raw": "{\n  \"game_id\": {{gameId}},\n  \"condition\": \"Good\",\n  \"price\": 0\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/listings", "host": ["{{baseUrl}}"], "path": ["listings"] }
+          }
+        },
+        {
+          "name": "List PC listings",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Listings query succeeds', function () { pm.response.to.have.status(200); });",
+            "const body = pm.response.json();",
+            "pm.test('New listing appears with nested game data', function () { const listing = body.find(function (item) { return item.id === Number(pm.collectionVariables.get('listingId')); }); pm.expect(listing).to.exist; pm.expect(listing.game.platform).to.eql('PC'); });"
+          ] } }],
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/listings?platform=PC", "host": ["{{baseUrl}}"], "path": ["listings"], "query": [{ "key": "platform", "value": "PC" }] } }
+        },
+        {
+          "name": "List unsupported platform (422)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Unsupported platform is rejected', function () { pm.response.to.have.status(422); });"
+          ] } }],
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/listings?platform=INVALID", "host": ["{{baseUrl}}"], "path": ["listings"], "query": [{ "key": "platform", "value": "INVALID" }] } }
+        },
+        {
+          "name": "Create payment",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Staff can create payment', function () { pm.response.to.have.status(201); });",
+            "const body = pm.response.json();",
+            "pm.test('Payment ID is returned', function () { pm.expect(body.paymentId).to.be.a('number'); });",
+            "pm.collectionVariables.set('paymentId', body.paymentId);"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{staffToken}}" }],
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 8\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/payment", "host": ["{{baseUrl}}"], "path": ["payment"] }
+          }
+        },
+        {
+          "name": "Create payment with invalid amount (422)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Non-positive payment amount is rejected', function () { pm.response.to.have.status(422); });"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{staffToken}}" }],
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 0\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/payment", "host": ["{{baseUrl}}"], "path": ["payment"] }
+          }
+        },
+        {
+          "name": "Create rental",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Available listing can be rented', function () { pm.response.to.have.status(201); });",
+            "const body = pm.response.json();",
+            "pm.test('Rental has expected listing and renter', function () { pm.expect(body.id).to.be.a('number'); pm.expect(body.listing_id).to.eql(Number(pm.collectionVariables.get('listingId'))); pm.expect(body.renter_id).to.eql(Number(pm.collectionVariables.get('customerId'))); });",
+            "pm.collectionVariables.set('rentalId', body.id);"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{staffToken}}" }],
+            "body": { "mode": "raw", "raw": "{\n  \"listing_id\": {{listingId}},\n  \"customer_id\": {{customerId}}\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/rentals", "host": ["{{baseUrl}}"], "path": ["rentals"] }
+          }
+        },
+        {
+          "name": "Rent unavailable listing (422)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Already rented listing cannot be rented again', function () { pm.response.to.have.status(422); });"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{staffToken}}" }],
+            "body": { "mode": "raw", "raw": "{\n  \"listing_id\": {{listingId}},\n  \"customer_id\": {{customerId}}\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/rentals", "host": ["{{baseUrl}}"], "path": ["rentals"] }
+          }
+        },
+        {
+          "name": "Return rental",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Rental return succeeds', function () { pm.response.to.have.status(201); });",
+            "pm.test('Return date is set', function () { pm.expect(pm.response.json().return_date).to.be.a('string').and.not.empty; });"
+          ] } }],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{staffToken}}" }],
+            "body": { "mode": "raw", "raw": "{\n  \"payment_id\": {{paymentId}}\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/rentals/{{rentalId}}", "host": ["{{baseUrl}}"], "path": ["rentals", "{{rentalId}}"] }
+          }
+        },
+        {
+          "name": "Return rental again (422)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Returned rental cannot be returned again', function () { pm.response.to.have.status(422); });"
+          ] } }],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{staffToken}}" }],
+            "body": { "mode": "raw", "raw": "{\n  \"payment_id\": {{paymentId}}\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/rentals/{{rentalId}}", "host": ["{{baseUrl}}"], "path": ["rentals", "{{rentalId}}"] }
+          }
+        },
+        {
+          "name": "Return missing rental (404)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Unknown rental returns 404', function () { pm.response.to.have.status(404); });"
+          ] } }],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{staffToken}}" }],
+            "body": { "mode": "raw", "raw": "{\n  \"payment_id\": {{paymentId}}\n}", "options": { "raw": { "language": "json" } } },
+            "url": { "raw": "{{baseUrl}}/rentals/999999999", "host": ["{{baseUrl}}"], "path": ["rentals", "999999999"] }
+          }
+        },
+        {
+          "name": "Sell listing",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Owner can sell available listing', function () { pm.response.to.have.status(200); });",
+            "pm.test('Listing is marked sold', function () { pm.expect(pm.response.json().availability).to.eql('sold'); });"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }],
+            "url": { "raw": "{{baseUrl}}/listings/{{listingId}}/sell", "host": ["{{baseUrl}}"], "path": ["listings", "{{listingId}}", "sell"] },
+            "description": "Runs after rental return, when this listing is available again."
+          }
+        },
+        {
+          "name": "Sell listing again (422)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Sold listing cannot be sold again', function () { pm.response.to.have.status(422); });"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }],
+            "url": { "raw": "{{baseUrl}}/listings/{{listingId}}/sell", "host": ["{{baseUrl}}"], "path": ["listings", "{{listingId}}", "sell"] }
+          }
+        },
+        {
+          "name": "Sell missing listing (404)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Unknown listing returns 404', function () { pm.response.to.have.status(404); });"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{customerToken}}" }],
+            "url": { "raw": "{{baseUrl}}/listings/999999999/sell", "host": ["{{baseUrl}}"], "path": ["listings", "999999999", "sell"] }
           }
         }
       ]

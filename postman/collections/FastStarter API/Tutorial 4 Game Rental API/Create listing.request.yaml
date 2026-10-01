@@ -1,0 +1,23 @@
+$kind: http-request
+url: "{{baseUrl}}/listings"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{customerToken}}
+body:
+  type: json
+  content: |-
+    {
+      "game_id": {{gameId}},
+      "condition": "Good",
+      "price": 8
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Listing is created', function () { pm.response.to.have.status(201); });
+      const body = pm.response.json();
+      pm.test('Listing is owned by the customer and includes game', function () { pm.expect(body.id).to.be.a('number'); pm.expect(body.game_id).to.eql(Number(pm.collectionVariables.get('gameId'))); pm.expect(body.owner_id).to.eql(Number(pm.collectionVariables.get('customerId'))); pm.expect(body.game.title).to.eql('Tutorial 4 Test Game'); });
+      pm.collectionVariables.set('listingId', body.id);
+    language: text/javascript
+order: 8000

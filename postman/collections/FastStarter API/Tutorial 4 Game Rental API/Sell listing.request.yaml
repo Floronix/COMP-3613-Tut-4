@@ -1,0 +1,13 @@
+$kind: http-request
+description: Runs after rental return, when this listing is available again.
+url: "{{baseUrl}}/listings/{{listingId}}/sell"
+method: POST
+headers:
+  Authorization: Bearer {{customerToken}}
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Owner can sell available listing', function () { pm.response.to.have.status(200); });
+      pm.test('Listing is marked sold', function () { pm.expect(pm.response.json().availability).to.eql('sold'); });
+    language: text/javascript
+order: 19000

@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{baseUrl}}/listings?platform=PC"
+method: GET
+queryParams:
+  platform: PC
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Listings query succeeds', function () { pm.response.to.have.status(200); });
+      const body = pm.response.json();
+      pm.test('New listing appears with nested game data', function () { const listing = body.find(function (item) { return item.id === Number(pm.collectionVariables.get('listingId')); }); pm.expect(listing).to.exist; pm.expect(listing.game.platform).to.eql('PC'); });
+    language: text/javascript
+order: 10000

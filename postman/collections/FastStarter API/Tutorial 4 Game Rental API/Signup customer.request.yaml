@@ -1,0 +1,28 @@
+$kind: http-request
+url: "{{baseUrl}}/signup"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "username": "{{customerUsername}}",
+      "email": "{{customerEmail}}",
+      "password": "{{customerPassword}}"
+    }
+scripts:
+  - type: beforeRequest
+    code: |-
+      const runId = Date.now();
+      pm.collectionVariables.set('customerUsername', 'tutorial4-' + runId);
+      pm.collectionVariables.set('customerEmail', 'tutorial4-' + runId + '@example.com');
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test('Signup succeeds with status 201', function () { pm.response.to.have.status(201); });
+      const body = pm.response.json();
+      pm.test('Response contains customer details but no password', function () { pm.expect(body.id).to.be.a('number'); pm.expect(body.username).to.eql(pm.collectionVariables.get('customerUsername')); pm.expect(body.email).to.eql(pm.collectionVariables.get('customerEmail')); pm.expect(body).not.to.have.property('password'); });
+      pm.collectionVariables.set('customerId', body.id);
+    language: text/javascript
+order: 1000

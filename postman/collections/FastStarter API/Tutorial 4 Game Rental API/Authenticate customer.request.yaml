@@ -1,0 +1,21 @@
+$kind: http-request
+url: "{{baseUrl}}/auth"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "username": "{{customerUsername}}",
+      "password": "{{customerPassword}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Customer authentication succeeds', function () { pm.response.to.have.status(200); });
+      const body = pm.response.json();
+      pm.test('Bearer token is returned', function () { pm.expect(body.token_type).to.eql('bearer'); pm.expect(body.access_token).to.be.a('string').and.not.empty; });
+      pm.collectionVariables.set('customerToken', body.access_token);
+    language: text/javascript
+order: 3000

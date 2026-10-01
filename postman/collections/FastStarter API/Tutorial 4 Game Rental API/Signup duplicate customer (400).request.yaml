@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{baseUrl}}/signup"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "username": "{{customerUsername}}",
+      "email": "{{customerEmail}}",
+      "password": "{{customerPassword}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Duplicate account is rejected', function () { pm.response.to.have.status(400); });
+      pm.test('Error identifies duplicate account', function () { pm.expect(pm.response.json().detail).to.include('already exists'); });
+    language: text/javascript
+order: 2000

@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/payment"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{staffToken}}
+body:
+  type: json
+  content: |-
+    {
+      "amount": 0
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test('Non-positive payment amount is rejected', function () { pm.response.to.have.status(422); });
+    language: text/javascript
+order: 13000

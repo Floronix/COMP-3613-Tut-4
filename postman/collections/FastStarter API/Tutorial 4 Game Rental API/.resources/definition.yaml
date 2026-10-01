@@ -1,0 +1,3 @@
+$kind: collection
+description: Run requests in order. Run `python manage.py seed` to make the seeded staff account (admin/adminpass) available; this does not drop existing data. Signup creates a fresh customer on every run.
+order: 1000

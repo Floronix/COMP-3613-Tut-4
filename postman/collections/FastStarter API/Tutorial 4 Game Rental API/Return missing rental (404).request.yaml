@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/rentals/999999999"
+method: PUT
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{staffToken}}
+body:
+  type: json
+  content: |-
+    {
+      "payment_id": {{paymentId}}
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test('Unknown rental returns 404', function () { pm.response.to.have.status(404); });
+    language: text/javascript
+order: 18000

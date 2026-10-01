@@ -1,0 +1,22 @@
+$kind: http-request
+url: "{{baseUrl}}/rentals"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{staffToken}}
+body:
+  type: json
+  content: |-
+    {
+      "listing_id": {{listingId}},
+      "customer_id": {{customerId}}
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Available listing can be rented', function () { pm.response.to.have.status(201); });
+      const body = pm.response.json();
+      pm.test('Rental has expected listing and renter', function () { pm.expect(body.id).to.be.a('number'); pm.expect(body.listing_id).to.eql(Number(pm.collectionVariables.get('listingId'))); pm.expect(body.renter_id).to.eql(Number(pm.collectionVariables.get('customerId'))); });
+      pm.collectionVariables.set('rentalId', body.id);
+    language: text/javascript
+order: 14000
